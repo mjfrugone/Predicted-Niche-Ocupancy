@@ -1,0 +1,70 @@
+#####PNO Analysis######
+library("phyloclim")
+library(raster)
+library(ape)
+path_bioclim <- list.files('C:/Users/Usuario/Desktop/Phyloniche/Variables/', pattern='.asc',full.names=T)
+path_model <- "maxent_asc_raw"
+var.names <- sapply(strsplit(basename(path_bioclim),"\\."), function(x) paste(x[1:(length(x)-1)], collapse="."))
+sp.names <- sapply(strsplit(basename(list.files("maxent_asc_raw", pattern='.asc',full.names=T)),"\\."), 
+                   function(x) paste(x[1:(length(x)-1)], collapse=".")) 
+for (i in 1:length(path_bioclim)){
+  test <- pno(path_bioclim[i], path_model, bin_number = 100)
+  colnames(test) <- c(var.names[i],sp.names)
+  write.csv(test, file=paste("C:/Users/Usuario/Desktop/Penguins Phyloniche/Filoclim/PNOF/",var.names[i],".csv",sep = ""),row.names=F)
+  pdf(file=paste("C:/Users/Usuario/Desktop/Phyloniche/PNO_plot/",var.names[i],".pdf",sep = ""), height=5,width=6)
+  plotPNO(test,xlab=var.names[i],wm=T)
+  dev.off()
+}
+for (i in 1:length(path_bioclim)){
+  test <- pno(path_bioclim[i], path_model, bin_number = 100)
+  colnames(test) <- c(var.names[i],sp.names)
+  write.csv(test, file=paste("C:/Users/Usuario/Desktop/Phyloniche/PNO/",var.names[i],".csv",sep = ""),row.names=F)
+  pdf(file=paste("C:/Users/Usuario/Desktop/Phyloniche/PNO_plot/",var.names[i],".pdf",sep = ""), height=5,width=6)
+  plotPNO(test,xlab=var.names[i],wm=T)
+  dev.off()
+}
+
+######Plot anc PNO and DTT#########
+#New tree
+tree<-read.tree("penguins.tree")
+plot(tree)
+
+bio.list <- list.files('PNO', pattern='.csv', full.names=T)
+bio.names <- sapply(strsplit(basename(bio.list),"\\."), function(x) paste(x[1:(length(x)-1)], collapse=".")) 
+
+pno.weighted.mean <- 						
+  function(x, subset = NULL, normalize = TRUE){
+    
+    #x <- cbind("VAR" = as.numeric(rownames(x)), x)
+    
+    # subset matrix
+    # ---------------------
+    if (!is.null(subset))
+      x <- x[, c(1, which(names(x) %in% subset))]
+    
+    nb <- dim(x)[2]
+    wm <- vector(length = (nb - 1))
+    for (i in 2:nb){
+      if (normalize){
+        nf <- sum(x[, i])
+        wm[i - 1] <- sum(x[, 1] * (x[, i] / nf))
+      }
+      else
+        wm[i - 1] <- sum(x[, 1] * x[, i])
+    }
+    names(wm) <- colnames(x)[2:nb]
+    wm
+  }
+
+for (i in 1:length(bio.list)){
+  bio <- read.csv(bio.list[i],h=T)
+  bio.anc <- anc.clim(target=tree, pno=bio, n=100, method = 'ML')
+  bio.wm <- pno.weighted.mean(bio)
+  pdf(paste(getwd(),'/PNO/Anc Plot/', bio.names[i],'.pdf',sep=''),height=4, width=5)
+  dtt.bio <- dtt(tree,bio.wm,nsim=1000)
+  dev.off()
+  pdf(paste(getwd(),'/PNO/DTT/', bio.names[i],'.pdf',sep=''),height=6, width=8)
+  plotAncClim(bio.anc, ylab=bio.names[i],cex=1,tipmode = 2)
+  dev.off()
+  }
+
