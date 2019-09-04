@@ -1,6 +1,6 @@
 # Predicted-Niche-Ocupancy
 
-In this repository we provide information (programs, packages and code) for the Predicted Niche Occupancy analysis performed on Vianna et al. 2019.
+In this repository we provide information (programs, packages and script) for the Predicted Niche Occupancy analysis performed on Vianna et al. 2019.
 
 ## SPATIAL OCURRENCE DATA
 
